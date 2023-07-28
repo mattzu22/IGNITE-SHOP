@@ -4,9 +4,11 @@ import {
   ProductContainer,
   ProductDetails,
 } from "@/styles/pages/product";
+import axios from "axios";
 import { GetStaticPaths, GetStaticProps } from "next";
 import Image from "next/image";
 import { useRouter } from "next/router";
+import { useState } from "react";
 import Stripe from "stripe";
 
 interface ProductProps {
@@ -16,19 +18,42 @@ interface ProductProps {
     imageUrl: string;
     price: string;
     description: string;
+    defaultPriceId: string;
   };
 }
 
 const Product = ({ product }: ProductProps) => {
-  const { query } = useRouter();
+  const [isCreatingCheckoutSession,setIsCreatingCheckoutSession ] =  useState(false)
 
+  async function handleBuyProduct() {
+    try {
+      setIsCreatingCheckoutSession(true)
 
-  const { isFallback } = useRouter()
+      const response = await axios.post("/api/checkout", {
+        priceId: product.defaultPriceId,
+      });
 
-  if(isFallback){
-    return <p>Loading...</p>
+      const { checkoutUrl } = response.data;
+
+      //redirecionar o usuário de dentro de uma função para uma rota externa, que nesse caso é o stripe
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      //conectar com uma ferramenta de observabilidade (Datadog / Sentry ) para obter as informações do erro que pode ter acontecido
+      setIsCreatingCheckoutSession(false)
+
+      alert("Falha ao redirecionar ao checkout");
+    }
   }
-  
+  // const { query } = useRouter();
+
+  // o next.js nos permiti obter uma informação através do hook userouter, o ISFALLBACK,
+  //quando tiver como true significa que eu estou fazendo um loading
+  const { isFallback } = useRouter();
+
+  if (isFallback) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <ProductContainer>
       <ImageContainer>
@@ -41,7 +66,7 @@ const Product = ({ product }: ProductProps) => {
 
         <p>{product.description}</p>
 
-        <button>Comprar agora</button>
+        <button disabled={isCreatingCheckoutSession} onClick={handleBuyProduct}>Comprar agora</button>
       </ProductDetails>
     </ProductContainer>
   );
@@ -62,6 +87,8 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({
   params,
 }) => {
   const productId = params!.id;
+  console.log(productId);
+  
 
   const product = await stripe.products.retrieve(productId, {
     expand: ["default_price"],
@@ -80,11 +107,11 @@ export const getStaticProps: GetStaticProps<any, { id: string }> = async ({
           currency: "BRL",
         }).format(price.unit_amount! / 100),
         description: product.description,
+        defaultPriceId: price.id,
       },
     },
     revalidate: 60 * 60 * 1,
   };
 };
 
-
-export default Product
+export default Product;
