@@ -11,16 +11,14 @@ import { stripe } from "../lib/stripe";
 
 import Stripe from "stripe";
 
-
 interface HomeProps {
   products: {
     id: string;
     name: string;
     imageUrl: string;
-    price: number;
+    price: string;
   }[];
 }
-  
 
 export default function Home({ products }: HomeProps) {
   const [sliderRef] = useKeenSlider({
@@ -33,19 +31,25 @@ export default function Home({ products }: HomeProps) {
   return (
     <HomeContainer ref={sliderRef} className="keen-slider">
       {products.map((product) => {
-        return(
+        return (
           <Link href={`/product/${product.id}`} key={product.id}>
+          
             <Product className="keen-slider__slide">
-
-              <Image src={product.imageUrl} alt="camiseta1" width={520} height={480} />
+              <Image
+                src={product.imageUrl}
+                alt="camiseta1"
+                width={520}
+                height={480}
+              />
 
               <footer>
                 <strong>{product.name}</strong>
                 <span>{product.price}</span>
               </footer>
             </Product>
+          
           </Link>
-        )
+        );
       })}
     </HomeContainer>
   );
@@ -55,7 +59,7 @@ export const getStaticProps: GetStaticProps = async () => {
   const response = await stripe.products.list({
     expand: ["data.default_price"],
   });
-  
+
   const products = response.data.map((product) => {
     const price = product.default_price as Stripe.Price;
 
@@ -63,9 +67,9 @@ export const getStaticProps: GetStaticProps = async () => {
       id: product.id,
       name: product.name,
       imageUrl: product.images[0],
-      price: new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
+      price: new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
       }).format(price.unit_amount! / 100),
     };
   });
@@ -74,6 +78,6 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       products,
     },
-    revalidate: 10,
+    revalidate: 60 * 60 + 1,
   };
 };

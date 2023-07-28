@@ -5,13 +5,12 @@ export const ProductContainer = styled('main', {
     justifyContent: "center",
     gap: '4rem',
 
-    maxWidth: '1180',
+    maxWidth: 1180,
     margin: '0 auto',
 });
 
 export const ImageContainer = styled('div', {
-    width: '100%',
-    maxWidth: 576,
+    width: '50%',
     height: 656,
     
     background: 'Linear-gradient(180deg, #1ea483 0%, #7465d4 100%)',
@@ -31,6 +30,7 @@ export const ImageContainer = styled('div', {
 export const ProductDetails = styled('div', {
     display: 'flex',
     flexDirection: 'column',
+    width: '50%',
 
     h1: {
         fontSize: '$2xl',
